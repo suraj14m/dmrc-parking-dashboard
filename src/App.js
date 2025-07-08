@@ -74,10 +74,20 @@ function SiteDetailWrapper() {
 function App() {
   return (
     <Router>
-      <nav className="p-4 bg-gray-100 flex gap-4">
-        <Link to="/">Dashboard</Link>
-        <Link to="/sites">Sites</Link>
+      <nav className="p-4 bg-gray-100 flex items-center justify-between">
+        {/* Left side: Logo and title */}
+        <Link to="/" className="flex items-center gap-4">
+          <img src="/dmrc-logo.png" alt="DMRC Logo" className="h-10 w-auto" />
+          <span className="text-lg font-bold">DMRC Parking Dashboard</span>
+        </Link>
+
+        {/* Right side: Navigation links */}
+        <div className="flex gap-4">
+          <Link to="/" className="text-blue-600 hover:underline">Dashboard</Link>
+          <Link to="/sites" className="text-blue-600 hover:underline">Sites</Link>
+        </div>
       </nav>
+
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/sites" element={<SiteList />} />
@@ -86,5 +96,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;
