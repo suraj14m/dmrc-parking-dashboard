@@ -1,6 +1,6 @@
 {
-  "short_name": "DMRC",
-  "name": "DMRC Parking Dashboard",
+  "short_name": "DMRC Parking",
+  "name": "DMRC Smart Parking Dashboard",
   "icons": [
     {
       "src": "icon-192x192.png",
