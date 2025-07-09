@@ -1,4 +1,4 @@
-// Simple Tailwind-styled button
+// src/components/ui/button.js
 export default function Button({ children, className = '', ...props }) {
   return (
     <button
