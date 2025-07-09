@@ -1,188 +1,153 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { Card, CardContent } from './components/ui/card';
-import { Input } from './components/ui/input';
-import { Button } from './components/ui/button';
-import { Download, FileText, Train, CheckCircle, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import {
+  BarChart4,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  FileDown
+} from 'lucide-react';
 
-const SHEET_ID = '1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0';
-const API_KEY = 'AIzaSyClpkwsvApOuFBAVJl3pF66mdkTOiGmx-s';
-const SHEET_NAME = '18.06.2025';
-const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+// 👉 if these give a “module not found” error run:
+//    npm i lucide-react
+// --------------------------------------------------
+// Tailwind‑styled primitives (these are **default** exports, not named)
+// If you generated them with shadcn/ui they are already default.
+// Otherwise replace these with your own simple components.
+import Input from './components/ui/input';
+import Button from './components/ui/button';
 
-/********************  helpers  ********************/
-const lineColors = {
-  red: 'bg-red-600',
-  blue: 'bg-blue-600',
-  green: 'bg-green-600',
-  yellow: 'bg-yellow-500',
-  airport: 'bg-purple-600',
-  violet: 'bg-violet-600',
-  orange: 'bg-orange-600',
-  pink: 'bg-pink-600',
-  grey: 'bg-gray-500',
-  silver: 'bg-slate-400',
-  'line 8': 'bg-amber-600',
-  'line 9': 'bg-lime-600'
+/*********************** GOOGLE SHEETS CONFIG ************************/
+const SHEET_ID  = '1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0';
+const API_KEY   = 'AIzaSyClpkwsvApOuFBAVJl3pF66mdkTOiGmx-s';
+const UPDATES_TAB = 'Parking updates 18.06.2025';
+const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(
+  UPDATES_TAB
+)}?key=${API_KEY}`;
+
+/************************ SMALL  UI HELPERS *************************/
+// colour‑coded tags for status column
+const statusTag = (text) => {
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  const colour = lower.includes('done')
+    ? 'bg-green-600'
+    : lower.includes('pending')
+    ? 'bg-yellow-600'
+    : 'bg-red-600';
+  return (
+    <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${colour}`}>{text}</span>
+  );
 };
 
-const badge = (text) => (
-  <span
-    className={`inline-block px-2 py-1 text-xs font-semibold text-white rounded-full ${
-      lineColors[text?.toLowerCase()] || 'bg-gray-400'
-    }`}
-  >
-    {text}
-  </span>
-);
+/*************************** COMPONENT  *****************************/
+export default function UpdatesPage() {
+  const [data, setData]   = useState([]);
+  const [filter, setFilter] = useState('');
+  const [open, setOpen] = useState({});
 
-/********************  UI COMPONENTS  ********************/
-function Dashboard({ data }) {
-  return (
-    <div className="p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2">
-        <Train className="h-8 w-8" /> DMRC Smart Parking Dashboard
-      </h1>
-      <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-        <Card className="shadow-xl p-6">
-          <CardContent className="flex flex-col items-center">
-            <span className="text-4xl font-bold">{data.length}</span>
-            <span className="mt-1 text-lg">Total Sites</span>
-          </CardContent>
-        </Card>
-        <Card className="shadow-xl p-6">
-          <CardContent className="flex flex-col items-center">
-            <span className="text-4xl font-bold">{data.filter(m => m.smartProvider).length}</span>
-            <span className="mt-1 text-lg">Smart Enabled</span>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function SiteList({ data }) {
-  const [search, setSearch] = useState('');
-  const filtered = data.filter(
-    site => site.station && site.station.toLowerCase().includes(search.toLowerCase())
-  );
-
-  return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4 text-center">Parking Sites</h2>
-      <Input
-        placeholder="Search by station name..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="mb-6 mx-auto max-w-md block"
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filtered.map((site, index) => (
-          <Link
-            to={`/sites/${index}`}
-            key={index}
-            className="block border rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-300"
-          >
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-semibold">{site.station}</h3>
-              {badge(site.line)}
-            </div>
-            <p className="text-gray-600 text-sm">Agency: {site.agency}</p>
-            <div className="mt-2 flex items-center gap-2">
-              {site.integrated?.toLowerCase() === 'yes' ? (
-                <CheckCircle className="text-green-600 h-4 w-4" />
-              ) : (
-                <XCircle className="text-red-600 h-4 w-4" />
-              )}
-              <span className="text-xs text-gray-500">{site.integrated === 'Yes' ? 'Integrated' : 'Not Integrated'}</span>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PdfButton({ url, label }) {
-  if (!url) return null;
-  return (
-    <Button
-      asChild
-      className="flex gap-2 items-center px-4 py-2 w-full justify-center"
-    >
-      <a href={url} target="_blank" rel="noopener noreferrer" download>
-        <Download className="h-4 w-4" /> {label}
-      </a>
-    </Button>
-  );
-}
-
-function SiteDetail({ id, data }) {
-  const site = data[Number(id)];
-  if (!site) return <div className="p-4 text-center">Site not found</div>;
-
-  return (
-    <div className="p-6 space-y-4">
-      <h2 className="text-3xl font-bold flex items-center gap-3">
-        <FileText className="h-7 w-7" /> {site.station}
-      </h2>
-      <div className="space-y-2 text-base">
-        <p><strong>Line:</strong> {badge(site.line)}</p>
-        <p><strong>Agency:</strong> {site.agency}</p>
-        <p><strong>Contract:</strong> {site.contract}</p>
-        <p><strong>Handover Date:</strong> {site.handover || 'N/A'}</p>
-        <p><strong>LoA Issued:</strong> {site.loaIssued || 'N/A'}</p>
-        <p><strong>Days Since Handover:</strong> {site.daysSince || 'N/A'}</p>
-        <p><strong>Smart Provider:</strong> {site.smartProvider || 'N/A'}</p>
-        <p>
-          <strong>Integrated:</strong>{' '}
-          {site.integrated?.toLowerCase() === 'yes' ? (
-            <span className="text-green-600 font-semibold">Yes</span>
-          ) : (
-            <span className="text-red-600 font-semibold">No</span>
-          )}
-        </p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-        <PdfButton url={site.loaPDF} label="Download LoA" />
-        <PdfButton url={site.gtcPDF} label="Download GTC" />
-      </div>
-    </div>
-  );
-}
-
-function SiteDetailWrapper({ data }) {
-  const id = window.location.pathname.split('/').pop();
-  return <SiteDetail id={id} data={data} />;
-}
-
-/********************  MAIN APP  ********************/
-function App() {
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
+  // ─── Fetch once on mount ────────────────────────────────────────
+  useState(() => {
     fetch(SHEET_URL)
-      .then(res => res.json())
-      .then(res => {
-        if (!res.values) return;
-        const rows = res.values;
-        const headers = rows[0].map(h => h.trim().toLowerCase());
-        const body = rows.slice(1);
-
-        const mapped = body.map(row => {
+      .then((r) => r.json())
+      .then((json) => {
+        const rows = json.values || [];
+        if (!rows.length) return;
+        const headers = rows[0].map((h) => h.trim().toLowerCase());
+        const body    = rows.slice(1);
+        const parsed  = body.map((row) => {
           const entry = {};
           headers.forEach((key, i) => {
             entry[key] = row[i] || '';
           });
-          return {
-            station: entry['station'] || '',
-            line: entry['line'] || '',
-            agency: entry['parking agency'] || '',
-            contract: entry['contract'] || '',
-            handover: entry['handing over'] || '',
-            loaIssued: entry['loa issued date'] || '',
-            daysSince: entry['days since handover'] || '',
-            smartProvider: entry['smart solution provider'] || '',
-            integrated: entry['integrated with dmrc app'] || '',
-            loaPDF: entry['loa pdf'] || '',
-            gtcPDF: entry
+          return entry;
+        });
+        setData(parsed);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!data.length) return <p className="p-4 text-center">Loading updates…</p>;
+
+  // group by station
+  const grouped = data.reduce((acc, row) => {
+    const station = row.station || 'Unknown';
+    acc[station] = acc[station] ? [...acc[station], row] : [row];
+    return acc;
+  }, {});
+
+  const stations = Object.keys(grouped).filter((s) =>
+    s.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const exportCSV = (rows, filename) => {
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(','), ...rows.map((r) => headers.map((h) => `"${r[h]}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="p-4 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2 justify-center">
+        <BarChart4 className="h-6 w-6" /> Parking Updates
+      </h1>
+
+      <Input
+        placeholder="Search station…"
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        className="mb-6 max-w-md mx-auto block"
+      />
+
+      {stations.map((station) => (
+        <div key={station} className="border rounded-lg mb-6 shadow-sm">
+          {/* Header row */}
+          <button
+            className="w-full px-4 py-3 bg-gray-100 flex justify-between items-center text-left"
+            onClick={() => setOpen((o) => ({ ...o, [station]: !o[station] }))}
+          >
+            <span className="font-semibold text-lg">{station}</span>
+            {open[station] ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </button>
+
+          {open[station] && (
+            <div className="p-4 overflow-x-auto">
+              <div className="flex justify-end mb-2">
+                <Button size="sm" onClick={() => exportCSV(grouped[station], `${station}-updates.csv`)}>
+                  <FileDown className="w-4 h-4 mr-1" /> Export CSV
+                </Button>
+              </div>
+              <table className="min-w-full text-sm border">
+                <thead className="bg-gray-200 text-xs uppercase">
+                  <tr>
+                    {Object.keys(grouped[station][0]).map((col) => (
+                      <th key={col} className="px-3 py-2 whitespace-nowrap">
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {grouped[station].map((row, idx) => (
+                    <tr key={idx} className="border-t hover:bg-gray-50">
+                      {Object.entries(row).map(([key, val]) => (
+                        <td key={key} className="px-3 py-2 whitespace-nowrap">
+                          {key.toLowerCase().includes('status') ? statusTag(val) : val}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}

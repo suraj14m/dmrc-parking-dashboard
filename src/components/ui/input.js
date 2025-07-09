@@ -1,9 +1,9 @@
-
-export function Input({ className, ...props }) {
+// src/components/ui/input.js
+export default function Input({ className = '', ...props }) {
   return (
     <input
-      className={`px-3 py-2 border rounded-lg w-full ${className || ''}`}
       {...props}
+      className={`border rounded px-2 py-1 focus:outline-none focus:ring w-full ${className}`}
     />
   );
 }
