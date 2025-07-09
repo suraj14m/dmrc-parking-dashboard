@@ -2,23 +2,59 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from './components/ui/card';
 import { Input } from './components/ui/input';
+import { Button } from './components/ui/button';
+import { Download, FileText, Train, CheckCircle, XCircle } from 'lucide-react';
 
 const SHEET_ID = '1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0';
 const API_KEY = 'AIzaSyClpkwsvApOuFBAVJl3pF66mdkTOiGmx-s';
 const SHEET_NAME = '18.06.2025';
 const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
 
+/********************  helpers  ********************/
+const lineColors = {
+  red: 'bg-red-600',
+  blue: 'bg-blue-600',
+  green: 'bg-green-600',
+  yellow: 'bg-yellow-500',
+  airport: 'bg-purple-600',
+  violet: 'bg-violet-600',
+  orange: 'bg-orange-600',
+  pink: 'bg-pink-600',
+  grey: 'bg-gray-500',
+  silver: 'bg-slate-400',
+  'line 8': 'bg-amber-600',
+  'line 9': 'bg-lime-600'
+};
+
+const badge = (text) => (
+  <span
+    className={`inline-block px-2 py-1 text-xs font-semibold text-white rounded-full ${
+      lineColors[text?.toLowerCase()] || 'bg-gray-400'
+    }`}
+  >
+    {text}
+  </span>
+);
+
 /********************  UI COMPONENTS  ********************/
 function Dashboard({ data }) {
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">DMRC Smart Parking Dashboard</h1>
-      <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-        <Card>
-          <CardContent>Total Sites: {data.length}</CardContent>
+      <h1 className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2">
+        <Train className="h-8 w-8" /> DMRC Smart Parking Dashboard
+      </h1>
+      <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
+        <Card className="shadow-xl p-6">
+          <CardContent className="flex flex-col items-center">
+            <span className="text-4xl font-bold">{data.length}</span>
+            <span className="mt-1 text-lg">Total Sites</span>
+          </CardContent>
         </Card>
-        <Card>
-          <CardContent>Smart Enabled: {data.filter(m => m.smartProvider).length}</CardContent>
+        <Card className="shadow-xl p-6">
+          <CardContent className="flex flex-col items-center">
+            <span className="text-4xl font-bold">{data.filter(m => m.smartProvider).length}</span>
+            <span className="mt-1 text-lg">Smart Enabled</span>
+          </CardContent>
         </Card>
       </div>
     </div>
@@ -27,69 +63,90 @@ function Dashboard({ data }) {
 
 function SiteList({ data }) {
   const [search, setSearch] = useState('');
-  console.log('Fetched Data:', data);
-
   const filtered = data.filter(
     site => site.station && site.station.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-2">Parking Sites</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center">Parking Sites</h2>
       <Input
         placeholder="Search by station name..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        className="mb-4"
+        className="mb-6 mx-auto max-w-md block"
       />
-      <ul className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filtered.map((site, index) => (
-          <li key={index} className="border p-4 rounded hover:bg-gray-100 text-sm max-sm:text-xs">
-            <Link to={`/sites/${index}`} className="text-blue-600 block">
-              <div><strong>{site.station}</strong></div>
-              <div className="text-gray-600">{site.line}</div>
-            </Link>
-          </li>
+          <Link
+            to={`/sites/${index}`}
+            key={index}
+            className="block border rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-300"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-semibold">{site.station}</h3>
+              {badge(site.line)}
+            </div>
+            <p className="text-gray-600 text-sm">Agency: {site.agency}</p>
+            <div className="mt-2 flex items-center gap-2">
+              {site.integrated?.toLowerCase() === 'yes' ? (
+                <CheckCircle className="text-green-600 h-4 w-4" />
+              ) : (
+                <XCircle className="text-red-600 h-4 w-4" />
+              )}
+              <span className="text-xs text-gray-500">{site.integrated === 'Yes' ? 'Integrated' : 'Not Integrated'}</span>
+            </div>
+          </Link>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
 
-function PdfLink({ url, label }) {
+function PdfButton({ url, label }) {
   if (!url) return null;
   return (
-    <p className="text-sm max-sm:text-xs">
-      <strong>{label}:</strong>{' '}
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 underline"
-      >
-        View {label}
+    <Button
+      asChild
+      className="flex gap-2 items-center px-4 py-2 w-full justify-center"
+    >
+      <a href={url} target="_blank" rel="noopener noreferrer" download>
+        <Download className="h-4 w-4" /> {label}
       </a>
-    </p>
+    </Button>
   );
 }
 
 function SiteDetail({ id, data }) {
   const site = data[Number(id)];
-  if (!site) return <div className="p-4">Site not found</div>;
+  if (!site) return <div className="p-4 text-center">Site not found</div>;
 
   return (
-    <div className="p-4 text-sm max-sm:text-xs">
-      <h2 className="text-xl font-bold mb-2">{site.station} – Details</h2>
-      <p><strong>Line:</strong> {site.line}</p>
-      <p><strong>Agency:</strong> {site.agency}</p>
-      <p><strong>Contract:</strong> {site.contract}</p>
-      <p><strong>Handover Date:</strong> {site.handover || 'N/A'}</p>
-      <p><strong>LoA Issued:</strong> {site.loaIssued || 'N/A'}</p>
-      <p><strong>Days Since Handover:</strong> {site.daysSince || 'N/A'}</p>
-      <p><strong>Smart Provider:</strong> {site.smartProvider || 'N/A'}</p>
-      <p><strong>Integrated:</strong> {site.integrated}</p>
-      <PdfLink url={site.loaPDF} label="LoA PDF" />
-      <PdfLink url={site.gtcPDF} label="GTC PDF" />
+    <div className="p-6 space-y-4">
+      <h2 className="text-3xl font-bold flex items-center gap-3">
+        <FileText className="h-7 w-7" /> {site.station}
+      </h2>
+      <div className="space-y-2 text-base">
+        <p><strong>Line:</strong> {badge(site.line)}</p>
+        <p><strong>Agency:</strong> {site.agency}</p>
+        <p><strong>Contract:</strong> {site.contract}</p>
+        <p><strong>Handover Date:</strong> {site.handover || 'N/A'}</p>
+        <p><strong>LoA Issued:</strong> {site.loaIssued || 'N/A'}</p>
+        <p><strong>Days Since Handover:</strong> {site.daysSince || 'N/A'}</p>
+        <p><strong>Smart Provider:</strong> {site.smartProvider || 'N/A'}</p>
+        <p>
+          <strong>Integrated:</strong>{' '}
+          {site.integrated?.toLowerCase() === 'yes' ? (
+            <span className="text-green-600 font-semibold">Yes</span>
+          ) : (
+            <span className="text-red-600 font-semibold">No</span>
+          )}
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+        <PdfButton url={site.loaPDF} label="Download LoA" />
+        <PdfButton url={site.gtcPDF} label="Download GTC" />
+      </div>
     </div>
   );
 }
@@ -128,35 +185,4 @@ function App() {
             smartProvider: entry['smart solution provider'] || '',
             integrated: entry['integrated with dmrc app'] || '',
             loaPDF: entry['loa pdf'] || '',
-            gtcPDF: entry['gtc pdf'] || ''
-          };
-        });
-
-        console.log('Mapped Data:', mapped);
-        setData(mapped);
-      });
-  }, []);
-
-  return (
-    <Router>
-      <nav className="p-4 bg-gray-100 flex flex-wrap items-center justify-between">
-        <Link to="/" className="flex items-center gap-4 mb-2 sm:mb-0">
-          <img src="/dmrc-logo.png" alt="DMRC Logo" className="h-10 w-auto" />
-          <span className="text-lg font-bold">DMRC Parking Dashboard</span>
-        </Link>
-        <div className="flex gap-4 flex-wrap">
-          <Link to="/" className="text-blue-600 hover:underline">Dashboard</Link>
-          <Link to="/sites" className="text-blue-600 hover:underline">Sites</Link>
-        </div>
-      </nav>
-
-      <Routes>
-        <Route path="/" element={<Dashboard data={data} />} />
-        <Route path="/sites" element={<SiteList data={data} />} />
-        <Route path="/sites/:id" element={<SiteDetailWrapper data={data} />} />
-      </Routes>
-    </Router>
-  );
-}
-
-export default App;
+            gtcPDF: entry
