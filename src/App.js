@@ -13,7 +13,7 @@ function Dashboard({ data }) {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">DMRC Smart Parking Dashboard</h1>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
         <Card>
           <CardContent>Total Sites: {data.length}</CardContent>
         </Card>
@@ -44,9 +44,10 @@ function SiteList({ data }) {
       />
       <ul className="space-y-2">
         {filtered.map((site, index) => (
-          <li key={index} className="border p-2 rounded hover:bg-gray-100">
-            <Link to={`/sites/${index}`} className="text-blue-600">
-              {site.station} – {site.line}
+          <li key={index} className="border p-4 rounded hover:bg-gray-100 text-sm max-sm:text-xs">
+            <Link to={`/sites/${index}`} className="text-blue-600 block">
+              <div><strong>{site.station}</strong></div>
+              <div className="text-gray-600">{site.line}</div>
             </Link>
           </li>
         ))}
@@ -58,7 +59,7 @@ function SiteList({ data }) {
 function PdfLink({ url, label }) {
   if (!url) return null;
   return (
-    <p>
+    <p className="text-sm max-sm:text-xs">
       <strong>{label}:</strong>{' '}
       <a
         href={url}
@@ -77,7 +78,7 @@ function SiteDetail({ id, data }) {
   if (!site) return <div className="p-4">Site not found</div>;
 
   return (
-    <div className="p-4">
+    <div className="p-4 text-sm max-sm:text-xs">
       <h2 className="text-xl font-bold mb-2">{site.station} – Details</h2>
       <p><strong>Line:</strong> {site.line}</p>
       <p><strong>Agency:</strong> {site.agency}</p>
@@ -87,8 +88,6 @@ function SiteDetail({ id, data }) {
       <p><strong>Days Since Handover:</strong> {site.daysSince || 'N/A'}</p>
       <p><strong>Smart Provider:</strong> {site.smartProvider || 'N/A'}</p>
       <p><strong>Integrated:</strong> {site.integrated}</p>
-
-      {/* PDF Links */}
       <PdfLink url={site.loaPDF} label="LoA PDF" />
       <PdfLink url={site.gtcPDF} label="GTC PDF" />
     </div>
@@ -128,8 +127,8 @@ function App() {
             daysSince: entry['days since handover'] || '',
             smartProvider: entry['smart solution provider'] || '',
             integrated: entry['integrated with dmrc app'] || '',
-            loaPDF: entry['loa pdf'] || '',   // <-- new column
-            gtcPDF: entry['gtc pdf'] || ''    // <-- new column
+            loaPDF: entry['loa pdf'] || '',
+            gtcPDF: entry['gtc pdf'] || ''
           };
         });
 
@@ -140,12 +139,12 @@ function App() {
 
   return (
     <Router>
-      <nav className="p-4 bg-gray-100 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-4">
+      <nav className="p-4 bg-gray-100 flex flex-wrap items-center justify-between">
+        <Link to="/" className="flex items-center gap-4 mb-2 sm:mb-0">
           <img src="/dmrc-logo.png" alt="DMRC Logo" className="h-10 w-auto" />
           <span className="text-lg font-bold">DMRC Parking Dashboard</span>
         </Link>
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <Link to="/" className="text-blue-600 hover:underline">Dashboard</Link>
           <Link to="/sites" className="text-blue-600 hover:underline">Sites</Link>
         </div>
