@@ -1,156 +1,93 @@
-// ───────────────────────────────────────────────────────────────
-// src/pages/UpdatesPage.js
-// ───────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
-import {
-  BarChart4,
-  ChevronDown,
-  ChevronUp,
-  FileDown
-} from 'lucide-react';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
-// If you generated these with shadcn/ui they are *default* exports.
-// Otherwise replace with your own simple <input …/> / <button …/> wrappers.
-import Input  from '../components/ui/input';
-import Button from '../components/ui/button';
+export default function ParkingUpdatesPage() {
+  const [data, setData] = useState([]);
+  const [expanded, setExpanded] = useState(null);
 
-/************** 1.  GOOGLE-SHEETS CONFIG  ************************/
-const SHEET_ID   = '1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0';
-const API_KEY    = 'AIzaSyClpkwsvApOuFBAVJl3pF66mdkTOiGmx-s';
-const UPDATES_TAB = 'Parking updates 18.06.2025';   // tab name *exactly*
-const SHEET_URL  =
-  `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/` +
-  `${encodeURIComponent(UPDATES_TAB)}?key=${API_KEY}`;
-
-/************** 2.  SMALL  UI HELPERS  ***************************/
-// colour-coded tag for any column that contains “status”
-function StatusTag({ text = '' }) {
-  const lower = text.toLowerCase();
-  const colour = lower.includes('done')
-    ? 'bg-green-600'
-    : lower.includes('pending')
-    ? 'bg-yellow-600'
-    : 'bg-red-600';
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-white text-xs font-semibold ${colour}`}>
-      {text}
-    </span>
-  );
-}
-
-/********************** 3.  MAIN  COMPONENT  *********************/
-export default function UpdatesPage() {
-  const [rows,   setRows]   = useState([]);
-  const [filter, setFilter] = useState('');          // station filter
-  const [open,   setOpen]   = useState({});          // accordion state
-
-  /* ── Fetch once on mount ──────────────────────────────────── */
   useEffect(() => {
-    fetch(SHEET_URL)
-      .then((r) => r.json())
-      .then((json) => {
-        const raw  = json.values || [];
-        if (!raw.length) return;
-
-        const headers = raw[0].map((h) => h.trim().toLowerCase());
-        const body    = raw.slice(1);
-
-        const parsed = body.map((r) => {
-          const obj = {};
-          headers.forEach((k, i) => (obj[k] = r[i] || ''));
-          return obj;
-        });
-        setRows(parsed);
+    fetch(
+      'https://opensheet.elk.sh/1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0/Parking updates 18.06.2025'
+    )
+      .then((res) => res.json())
+      .then((rows) => {
+        if (!rows || rows.length === 0) return;
+        setData(rows);
       })
-      .catch(console.error);
+      .catch((err) => console.error('Error fetching:', err));
   }, []);
 
-  if (!rows.length) return <p className="p-6 text-center">Loading updates…</p>;
-
-  /* ── Group by station ─────────────────────────────────────── */
-  const grouped = rows.reduce((acc, r) => {
-    const stn = r.station || 'Unknown';
-    acc[stn] = acc[stn] ? [...acc[stn], r] : [r];
+  const groupedByStation = data.reduce((acc, row) => {
+    const station = row['Station']?.trim() || 'Unknown';
+    if (!acc[station]) acc[station] = [];
+    acc[station].push(row);
     return acc;
   }, {});
 
-  const stations = Object.keys(grouped).filter((s) =>
-    s.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  /* ── CSV export helper ─────────────────────────────────────── */
-  const exportCSV = (data, filename) => {
-    const headers = Object.keys(data[0]);
-    const csv = [
-      headers.join(','),
-      ...data.map((row) => headers.map((h) => `"${row[h]}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Parking Updates');
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const file = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(file, 'parking-updates.xlsx');
   };
 
-  /* ── RENDER ───────────────────────────────────────────────── */
+  const getBadgeColor = (status) => {
+    if (!status) return 'bg-gray-400';
+    const s = status.toLowerCase();
+    if (s.includes('done')) return 'bg-green-500';
+    if (s.includes('pending')) return 'bg-red-500';
+    if (s.includes('in progress')) return 'bg-yellow-500';
+    return 'bg-gray-400';
+  };
+
+  // Normalizing key like "Valid Upto:" → "Valid Upto"
+  const cleanKey = (key) => key?.replace(/:$/, '').trim();
+
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2 justify-center">
-        <BarChart4 className="h-6 w-6" /> Parking Updates
-      </h1>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Parking Updates</h2>
+        <button
+          onClick={exportExcel}
+          className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
+        >
+          Export to Excel
+        </button>
+      </div>
 
-      <Input
-        placeholder="Search station…"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="mb-6 max-w-md mx-auto block"
-      />
-
-      {stations.map((stn) => (
-        <div key={stn} className="border rounded-lg mb-6 shadow-sm">
-          {/* Accordion header */}
+      {Object.entries(groupedByStation).map(([station, entries]) => (
+        <div key={station} className="mb-4 border rounded">
           <button
-            className="w-full px-4 py-3 bg-gray-100 flex justify-between items-center text-left"
-            onClick={() => setOpen((o) => ({ ...o, [stn]: !o[stn] }))}
+            onClick={() => setExpanded(expanded === station ? null : station)}
+            className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 font-semibold"
           >
-            <span className="font-semibold text-lg">{stn}</span>
-            {open[stn] ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            {station} ({entries.length} item{entries.length > 1 ? 's' : ''})
           </button>
-
-          {/* Accordion body */}
-          {open[stn] && (
-            <div className="p-4 overflow-x-auto">
-              <div className="flex justify-end mb-3">
-                <Button size="sm" onClick={() => exportCSV(grouped[stn], `${stn}-updates.csv`)}>
-                  <FileDown className="w-4 h-4 mr-1" /> Export CSV
-                </Button>
-              </div>
-
-              <table className="min-w-full text-sm border">
-                <thead className="bg-gray-200 text-xs uppercase">
-                  <tr>
-                    {Object.keys(grouped[stn][0]).map((col) => (
-                      <th key={col} className="px-3 py-2 whitespace-nowrap">
-                        {col}
-                      </th>
+          {expanded === station && (
+            <div className="p-4 space-y-2">
+              {entries.map((row, idx) => (
+                <div key={idx} className="p-2 border rounded bg-white shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
+                    {Object.entries(row).map(([key, value]) => (
+                      <div key={key} className="flex gap-1">
+                        <span className="font-medium">{cleanKey(key)}:</span>
+                        <span
+                          className={`px-2 rounded ${
+                            cleanKey(key).toLowerCase() === 'status'
+                              ? `text-white ${getBadgeColor(value)}`
+                              : ''
+                          }`}
+                        >
+                          {value}
+                        </span>
+                      </div>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {grouped[stn].map((row, i) => (
-                    <tr key={i} className="border-t hover:bg-gray-50">
-                      {Object.entries(row).map(([k, v]) => (
-                        <td key={k} className="px-3 py-2 whitespace-nowrap">
-                          {k.includes('status') ? <StatusTag text={v} /> : v}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
