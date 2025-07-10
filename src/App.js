@@ -26,10 +26,10 @@ export default function App() {
 
         <div className="flex gap-2">
           <NavLink to="/sites" className={navClasses}>
-            <ListOrdered className="w-4 h-4" /> Sites
+            <ListOrdered className="w-4 h-4" /> Smart Parking
           </NavLink>
           <NavLink to="/updates" className={navClasses}>
-            <LayoutDashboard className="w-4 h-4" /> Updates
+            <LayoutDashboard className="w-4 h-4" /> Parking Updates
           </NavLink>
         </div>
       </nav>
