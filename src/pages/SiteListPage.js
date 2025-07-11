@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/pages/SiteListPage.js
-// ───────────────────────────────────────────────────────────────
 import { useState, useEffect } from 'react';
 import {
   MapPinned,
@@ -10,24 +8,22 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-import Input  from '../components/ui/input';
+import Input from '../components/ui/input';
 import Button from '../components/ui/button';
 
-/*********************** GOOGLE SHEETS CONFIG ************************/
-const SHEET_ID   = '1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0';   // same workbook
-const API_KEY    = 'AIzaSyClpkwsvApOuFBAVJl3pF66mdkTOiGmx-s';
-const SITES_TAB  = '18.06.2025';                                     // master site list
-const SHEET_URL  = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(
+const SHEET_ID = '1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0';
+const API_KEY = 'AIzaSyClpkwsvApOuFBAVJl3pF66mdkTOiGmx-s';
+const SITES_TAB = '18.06.2025';
+const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(
   SITES_TAB
 )}?key=${API_KEY}`;
 
-/*********************** SMALL HELPERS ******************************/
 const exportCSV = (rows, filename) => {
   if (!rows.length) return;
   const headers = Object.keys(rows[0]);
   const csv = [headers.join(','), ...rows.map((r) =>
-      headers.map((h) => `"${(r[h] ?? '').replace(/"/g, '""')}"`).join(',')
-    )].join('\n');
+    headers.map((h) => `"${(r[h] ?? '').replace(/"/g, '""')}"`).join(',')
+  )].join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -38,13 +34,11 @@ const exportCSV = (rows, filename) => {
   link.remove();
 };
 
-/************************* PAGE COMPONENT **************************/
 export default function SiteListPage() {
   const [sites, setSites] = useState([]);
   const [filter, setFilter] = useState('');
-  const [open,   setOpen]   = useState({});      // per-station collapse
+  const [open, setOpen] = useState({});
 
-  /* ─── Fetch once on mount ───────────────────────────── */
   useEffect(() => {
     fetch(SHEET_URL)
       .then((r) => r.json())
@@ -52,7 +46,7 @@ export default function SiteListPage() {
         const rows = json.values || [];
         if (!rows.length) return;
         const headers = rows[0].map((h) => h.trim().toLowerCase());
-        const body    = rows.slice(1);
+        const body = rows.slice(1);
 
         const parsed = body.map((row) => {
           const entry = {};
@@ -60,17 +54,17 @@ export default function SiteListPage() {
             entry[key] = row[i] || '';
           });
           return {
-            station:       entry['station'],
-            line:          entry['line'],
-            agency:        entry['parking agency'],
-            contract:      entry['contract'],
-            handover:      entry['handing over'],
-            loaIssued:     entry['loa issued date'],
-            daysSince:     entry['days since handover'],
+            station: entry['station'],
+            line: entry['line'],
+            agency: entry['parking agency'],
+            contract: entry['contract'],
+            handover: entry['handing over'],
+            loaIssued: entry['loa issued date'],
+            daysSince: entry['days since handover'],
             smartProvider: entry['smart solution provider'],
-            integrated:    entry['integrated with dmrc app'],
-            loaPDF:        entry['loa pdf'],
-            gtcPDF:        entry['gtc pdf']
+            integrated: entry['integrated with dmrc app'],
+            loaPDF: entry['loa pdf'],
+            gtcPDF: entry['gtc pdf']
           };
         });
         setSites(parsed);
@@ -86,16 +80,16 @@ export default function SiteListPage() {
   );
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2 justify-center">
-        <MapPinned className="h-6 w-6" /> Site List
+    <div className="p-4 max-w-6xl mx-auto bg-blue-50 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2 justify-center text-blue-800">
+        <MapPinned className="h-7 w-7" /> Smart Parking Sites
       </h1>
 
       <Input
         placeholder="Search station…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        className="mb-6 max-w-md mx-auto block"
+        className="mb-6 max-w-md mx-auto block border-blue-300 shadow"
       />
 
       <div className="flex justify-end mb-4">
@@ -105,40 +99,37 @@ export default function SiteListPage() {
       </div>
 
       {filtered.map((site) => (
-        <div key={site.station} className="border rounded-lg mb-4 shadow-sm">
+        <div key={site.station} className="border rounded-lg mb-4 shadow-md bg-white">
           <button
-            className="w-full px-4 py-3 bg-gray-100 flex justify-between items-center text-left"
+            className="w-full px-4 py-3 bg-blue-100 flex justify-between items-center text-left hover:bg-blue-200 transition-colors"
             onClick={() =>
               setOpen((o) => ({ ...o, [site.station]: !o[site.station] }))
             }
           >
-            <span className="font-semibold">
-              {site.station} <span className="text-sm text-gray-500">({site.line})</span>
+            <span className="font-semibold text-blue-900">
+              {site.station}{' '}
+              <span className="text-sm text-gray-600">({site.line})</span>
             </span>
             {open[site.station] ? (
-              <ChevronUp className="h-5 w-5" />
+              <ChevronUp className="h-5 w-5 text-blue-700" />
             ) : (
-              <ChevronDown className="h-5 w-5" />
+              <ChevronDown className="h-5 w-5 text-blue-700" />
             )}
           </button>
 
           {open[site.station] && (
-            <div className="p-4 text-sm">
+            <div className="p-4 text-sm bg-gradient-to-br from-white to-blue-50">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6">
-                <Info label="Line"          value={site.line} />
-                <Info label="Agency"        value={site.agency} />
-                <Info label="Contract"      value={site.contract} />
-                <Info label="LOA Issued"    value={site.loaIssued} />
-                <Info label="Handover"      value={site.handover} />
-                <Info label="Days since"    value={site.daysSince} />
+                <Info label="Line" value={site.line} />
+                <Info label="Agency" value={site.agency} />
+                <Info label="Contract" value={site.contract} />
+                <Info label="LOA Issued" value={site.loaIssued} />
+                <Info label="Handover" value={site.handover} />
+                <Info label="Days since" value={site.daysSince} />
                 <Info label="Smart Provider" value={site.smartProvider} />
-                <Info label="Integrated"     value={site.integrated} />
-                {site.loaPDF && (
-                  <FileLink label="LOA PDF" url={site.loaPDF} />
-                )}
-                {site.gtcPDF && (
-                  <FileLink label="GTC PDF" url={site.gtcPDF} />
-                )}
+                <Info label="Integrated" value={site.integrated} />
+                {site.loaPDF && <FileLink label="LOA PDF" url={site.loaPDF} />}
+                {site.gtcPDF && <FileLink label="GTC PDF" url={site.gtcPDF} />}
               </div>
             </div>
           )}
@@ -148,17 +139,16 @@ export default function SiteListPage() {
   );
 }
 
-/* ───────────── reusable mini components ────────────── */
 const Info = ({ label, value }) => (
   <p>
-    <span className="font-medium">{label}:</span>{' '}
+    <span className="font-medium text-blue-800">{label}:</span>{' '}
     <span className="text-gray-700">{value || '—'}</span>
   </p>
 );
 
 const FileLink = ({ label, url }) => (
   <p>
-    <span className="font-medium">{label}:</span>{' '}
+    <span className="font-medium text-blue-800">{label}:</span>{' '}
     <a
       href={url}
       target="_blank"

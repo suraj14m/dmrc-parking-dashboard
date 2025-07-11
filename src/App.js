@@ -1,8 +1,10 @@
+// src/App.js
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { LayoutDashboard, ListOrdered } from 'lucide-react';
 
 import SiteListPage from './pages/SiteListPage';
 import UpdatesPage from './pages/ParkingUpdatesPage';
+import SmartDashboard from './pages/SmartDashboard';
 
 const navClasses = ({ isActive }) =>
   `flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium
@@ -35,7 +37,7 @@ export default function App() {
       </nav>
 
       <Routes>
-        <Route path="/" element={<SiteListPage />} />
+        <Route path="/" element={<SmartDashboard />} />
         <Route path="/sites" element={<SiteListPage />} />
         <Route path="/updates" element={<UpdatesPage />} />
         <Route path="*" element={<p className="p-8 text-center">404 – page not found</p>} />
