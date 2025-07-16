@@ -38,7 +38,6 @@ export default function ParkingUpdatesPage() {
     return acc;
   }, {});
 
-  // Count Smart vs Conventional
   const smartCount = data.filter((row) => {
     const typeKey = Object.keys(row).find((k) => k.toLowerCase().includes('type of parking'));
     return typeKey && row[typeKey]?.toLowerCase().includes('smart');
@@ -81,7 +80,7 @@ export default function ParkingUpdatesPage() {
         </button>
       </div>
 
-      {/* Smart/Conventional Stats */}
+      {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white p-4 rounded shadow text-center">
           <div className="text-sm text-gray-500">Total Sites</div>
@@ -129,7 +128,7 @@ export default function ParkingUpdatesPage() {
         />
       </div>
 
-      {/* Station Sections */}
+      {/* Collapsible Station Sections */}
       {Object.entries(groupedByStation).map(([station, entries]) => (
         <div key={station} className="mb-6 border border-blue-200 rounded shadow">
           <button
@@ -146,15 +145,27 @@ export default function ParkingUpdatesPage() {
                     {Object.entries(row).map(([key, value]) => (
                       <div key={key} className="flex gap-1">
                         <span className="font-medium text-gray-700">{cleanKey(key)}:</span>
-                        <span
-                          className={`px-2 py-0.5 rounded font-semibold ${
-                            cleanKey(key).toLowerCase() === 'status'
-                              ? `text-white ${getBadgeColor(value)}`
-                              : 'text-gray-800 bg-gray-100'
-                          }`}
-                        >
-                          {value || '—'}
-                        </span>
+                        {/* 👇 Check if it's a link */}
+                        {/https?:\/\//i.test(value) ? (
+                          <a
+                            href={value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline break-all"
+                          >
+                            View Link
+                          </a>
+                        ) : (
+                          <span
+                            className={`px-2 py-0.5 rounded font-semibold ${
+                              cleanKey(key).toLowerCase() === 'status'
+                                ? `text-white ${getBadgeColor(value)}`
+                                : 'text-gray-800 bg-gray-100'
+                            }`}
+                          >
+                            {value || '—'}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
