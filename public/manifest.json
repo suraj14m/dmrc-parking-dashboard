@@ -1,20 +1,22 @@
 {
+  "name": "DMRC Parking Dashboard",
   "short_name": "DMRC Parking",
-  "name": "DMRC Smart Parking Dashboard",
+  "description": "Smart Parking & Updates Dashboard for DMRC",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192x192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "icon-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff"
+  ]
 }
