@@ -57,6 +57,78 @@ export default function ParkingUpdatesPage() {
     saveAs(file, 'parking-updates.xlsx');
   };
 
+  const handleOpenContractorWindow = () => {
+    if (!data || data.length === 0) {
+      alert("Parking data not loaded.");
+      return;
+    }
+
+    const contractorWindow = window.open('', '_blank', 'width=900,height=700');
+
+    if (!contractorWindow) return;
+
+    const groupedByContractor = data.reduce((acc, row) => {
+      const contractor = row['Name of Parking Agency']?.trim() || 'Unknown Contractor';
+      const station = row['Station']?.trim() || 'Unnamed Station';
+
+      if (!acc[contractor]) acc[contractor] = [];
+      acc[contractor].push(station);
+      return acc;
+    }, {});
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Contractor-wise Parking Sites</title>
+          <style>
+            body {
+              font-family: sans-serif;
+              padding: 20px;
+              background-color: #f8fafc;
+              color: #1e293b;
+            }
+            h1 {
+              text-align: center;
+              margin-bottom: 30px;
+              color: #1e40af;
+            }
+            .contractor {
+              margin-bottom: 25px;
+            }
+            .contractor h2 {
+              color: #0f172a;
+              font-size: 20px;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 4px;
+              margin-bottom: 8px;
+            }
+            .contractor ul {
+              list-style-type: disc;
+              padding-left: 20px;
+            }
+            .contractor li {
+              margin-bottom: 4px;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Contractor-wise Parking Sites</h1>
+          ${Object.entries(groupedByContractor).map(([contractor, sites]) => `
+            <div class="contractor">
+              <h2>${contractor}</h2>
+              <ul>
+                ${[...new Set(sites)].sort().map(site => `<li>${site}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `;
+
+    contractorWindow.document.write(htmlContent);
+    contractorWindow.document.close();
+  };
+
   const getBadgeColor = (status) => {
     if (!status) return 'bg-gray-400';
     const s = status.toLowerCase();
@@ -70,14 +142,22 @@ export default function ParkingUpdatesPage() {
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Parking Updates</h2>
-        <button
-          onClick={exportExcel}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
-        >
-          Export to Excel
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={exportExcel}
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+          >
+            Export to Excel
+          </button>
+          <button
+            onClick={handleOpenContractorWindow}
+            className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700"
+          >
+            Contractor-wise Sites
+          </button>
+        </div>
       </div>
 
       {/* Stats Summary */}
@@ -145,7 +225,6 @@ export default function ParkingUpdatesPage() {
                     {Object.entries(row).map(([key, value]) => (
                       <div key={key} className="flex gap-1">
                         <span className="font-medium text-gray-700">{cleanKey(key)}:</span>
-                        {/* 👇 Check if it's a link */}
                         {/https?:\/\//i.test(value) ? (
                           <a
                             href={value}
