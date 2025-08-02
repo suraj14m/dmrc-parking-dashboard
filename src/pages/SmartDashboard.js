@@ -2,46 +2,45 @@
 import { useEffect, useState } from 'react';
 
 export default function SmartDashboard() {
-  const [data, setData] = useState([]);
+  const [smartData, setSmartData] = useState([]);
+  const [miscData, setMiscData] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
 
-  const SHEET_URL = 'https://opensheet.elk.sh/1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0/18.06.2025';
-
   useEffect(() => {
-    fetch(SHEET_URL)
+    fetch('https://opensheet.elk.sh/1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0/18.06.2025')
       .then((res) => res.json())
-      .then((rows) => {
-        if (!Array.isArray(rows)) {
-          console.error('Invalid data format:', rows);
-          return;
-        }
-        setData(rows);
-      })
-      .catch((err) => console.error('Error fetching:', err));
+      .then((rows) => setSmartData(rows))
+      .catch((err) => console.error('Error fetching smart sheet:', err));
+
+    fetch('https://opensheet.elk.sh/1AB21wjJIu5vK69A6OlnJ9I8M5XBbOib7PsO2axvOiu0/Misc')
+      .then((res) => res.json())
+      .then((rows) => setMiscData(rows))
+      .catch((err) => console.error('Error fetching misc sheet:', err));
   }, []);
 
-  const smartSites = data;
-  const integratedSites = smartSites.filter((row) => row['Integrated with DMRC App']?.toLowerCase() === 'ok');
-  const pendingSites = smartSites.filter((row) => row['Integrated with DMRC App']?.toLowerCase() !== 'ok');
+  const integratedSites = smartData.filter((row) => row['Integrated with DMRC App']?.toLowerCase() === 'ok');
+  const pendingSites = smartData.filter((row) => row['Integrated with DMRC App']?.toLowerCase() !== 'ok');
 
-  const dayKey = data.length
-    ? Object.keys(data[0]).find((k) => k.toLowerCase().includes('days since handover'))
-    : null;
+  const dayKey = smartData.length ? Object.keys(smartData[0]).find((k) => k.toLowerCase().includes('days since handover')) : null;
+  const stationKey = smartData.length ? Object.keys(smartData[0]).find((k) => k.toLowerCase() === 'station') : null;
 
-  const stationKey = data.length
-    ? Object.keys(data[0]).find((k) => k.toLowerCase() === 'station')
-    : null;
-
-  const sixtyDaySites = smartSites.filter((row) => {
+  const sixtyDaySites = smartData.filter((row) => {
     const days = Number(row[dayKey]);
     return !isNaN(days) && days >= 60;
   });
+
+  const renderEntries = (data) => {
+    if (!data) return null;
+    return Object.entries(data).map(([key, val], j) => (
+      <div key={j}><strong>{key}:</strong> {val}</div>
+    ));
+  };
 
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Smart Parking Summary</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Total Smart Parking Sites" value={smartSites.length} />
+        <StatCard label="Total Smart Parking Sites" value={smartData.length} />
         <StatCard label="Integrated with DMRC App" value={integratedSites.length} />
         <StatCard label="Pending Integration" value={pendingSites.length} />
         <StatCard
@@ -74,6 +73,25 @@ export default function SmartDashboard() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {miscData.length > 1 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-gray-700 mb-4">Miscellaneous Parking Info</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-4 rounded shadow text-sm">
+              <h3 className="font-semibold text-gray-800 mb-2">Summary of Parking at Metro Stations</h3>
+              {renderEntries(miscData[0])}
+              {renderEntries(miscData[3])}
+            </div>
+
+            <div className="bg-white p-4 rounded shadow text-sm">
+              <h3 className="font-semibold text-gray-800 mb-2">Line-wise & Allotment Info</h3>
+              {renderEntries(miscData[1])}
+              {renderEntries(miscData[2])}
+            </div>
           </div>
         </div>
       )}
