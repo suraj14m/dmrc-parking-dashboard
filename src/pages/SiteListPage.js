@@ -120,7 +120,7 @@ export default function SiteListPage() {
           {open[site.station] && (
             <div className="p-4 text-sm bg-gradient-to-br from-white to-blue-50">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6">
-                <Info label="Line" value={site.line} />
+                <Info label="LINE" value={site.line} />
                 <Info label="Agency" value={site.agency} />
                 <Info label="Contract" value={site.contract} />
                 <Info label="LOA Issued" value={site.loaIssued} />
